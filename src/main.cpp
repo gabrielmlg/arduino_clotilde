@@ -1,4 +1,13 @@
 #include <Arduino.h>
+#include <Adafruit_Sensor.h> // Biblioteca DHT Sensor Adafruit
+
+#include <DHT.h>
+#include <DHT_U.h>
+#define DHTTYPE DHT11 // Sensor DHT11
+#define DHTPIN 2 // Pino do Arduino no Sensor (Data)
+
+DHT_Unified dht(DHTPIN, DHTTYPE); // configurando o Sensor DHT - pino e tipo
+uint32_t delayMS = 500; // variável para atraso no tempo
 
 // Exemplo 13 – Arduino Sensor de umidade do solo e Sensor de chuva
 // Apostila Eletrogate - KIT MAKER
@@ -13,10 +22,14 @@ bool soloUmido; // condição de solo úmido
 
 void setup() {
   pinMode(sensorUmidadeSolo, INPUT); // Sensor de umidade do solo - porta A0 é entrada
+  
   // pinMode(sensorChuva, INPUT); // Sensor de chuva - porta A1 é entrada
   // pinMode(portaRele, OUTPUT); // Porta de controle do Relé - D4 é saída
   // digitalWrite(portaRele, HIGH); // Mantenha relé desligado
   Serial.begin(9600); // Monitor console 9600 Bps
+
+  dht.begin(); // inicializa a função
+  sensor_t sensor;
 }
 
 void SensorDeChuva ()
@@ -45,11 +58,6 @@ void SensorDeUmidade ()
 
   Serial.print("{'umidade_solo': ");
   Serial.print(valorSensorUmidadeSolo); // valor do sensor de umidade do solo
-
-  Serial.print(", 'temperatura ambiente': ");
-  Serial.print(valorSensorUmidadeSolo); // valor do sensor de umidade do solo
-
-  Serial.println("}");
   
   if (valorSensorUmidadeSolo < valorLimiteUmidade) // se o valor for menor do que o limite
   {
@@ -64,6 +72,42 @@ void SensorDeUmidade ()
 
 }
 
+void SensorDeTemperatura(){
+  sensors_event_t event; // inicializa o evento da Temperatura
+  dht.temperature().getEvent(&event); // faz a leitura da Temperatura
+  
+  if (isnan(event.temperature)) // se algum erro na leitura
+  {
+    Serial.println("Erro na leitura da Temperatura!");
+  }
+  else // senão
+  {
+    Serial.print(", 'temperatura ambiente': ");
+    Serial.print(event.temperature); // valor do sensor de umidade do solo
+
+    // Serial.print("Temperatura: "); // imprime a Temperatura
+    // Serial.print(event.temperature);
+    // Serial.println(" *C");
+  }
+  
+  dht.humidity().getEvent(&event); // faz a leitura de umidade
+  if (isnan(event.relative_humidity)) // se algum erro na leitura
+  {
+    Serial.println("Erro na leitura da Umidade!");
+  }
+  else // senão
+  {
+    Serial.print(", 'umidade ambiente': ");
+    Serial.print(event.relative_humidity); // valor do sensor de umidade do solo
+
+    Serial.println("}");
+
+    // Serial.print("Umidade: "); // imprime a Umidade
+    // Serial.print(event.relative_humidity);
+    // Serial.println("%");
+  }
+}
+
 void ControleDoRele() // ajuste o tempo de acionamento da bomba
 {
   digitalWrite(portaRele, HIGH); // relé desligado
@@ -76,19 +120,18 @@ void ControleDoRele() // ajuste o tempo de acionamento da bomba
 void loop()
 {
 
-  for (int i = 1; i < 4321; i++) // contagem de 1 a 4320 ( 4320 x 5 segundos = 6 horas)
-  {
-    // SensorDeChuva (); // faz medição do sensor de chuva
-    SensorDeUmidade (); // faz medição do sensor de umidade do solo
-    
-    // if (chuva == 0 && soloUmido == 0 && i == 1) 
-      // Serial.println("LIGA A BOMBA DE AGUA");// ControleDoRele(); // aciona a bomba dágua a cada 6 horas se tempo e solo estiverem secos
-    
-    // Serial.print(i*5); // imprime tempo em segundos
-    // Serial.println(" segundos"); 
-    // Serial.println(); // imprime mensagem e uma linha
+  delay(2000); // atraso de 5 segundos
+
+  // SensorDeChuva (); // faz medição do sensor de chuva
+  SensorDeUmidade (); // faz medição do sensor de umidade do solo
+  SensorDeTemperatura();
   
-    delay(2000); // atraso de 5 segundos
-  }
+  // if (chuva == 0 && soloUmido == 0 && i == 1) 
+    // Serial.println("LIGA A BOMBA DE AGUA");// ControleDoRele(); // aciona a bomba dágua a cada 6 horas se tempo e solo estiverem secos
+  
+  // Serial.print(i*5); // imprime tempo em segundos
+  // Serial.println(" segundos"); 
+  // Serial.println(); // imprime mensagem e uma linha
+    
 
 }
