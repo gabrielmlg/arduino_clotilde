@@ -13,15 +13,22 @@ uint32_t delayMS = 500; // variável para atraso no tempo
 // Apostila Eletrogate - KIT MAKER
 // Gustavo Murta
 int sensorUmidadeSolo = A0; // Sensor de umidade do solo pino A0 conectado no A0 do Arduino
-int sensorChuva = A1; // Sensor de chuva pino A0 conectado no A1 do Arduino
+int sensorChuva = A5; // Sensor de chuva pino A0 conectado no A1 do Arduino
+int sensorUmidadeSolo2 = A1; // Sensor de chuva pino A0 conectado no A1 do Arduino
 int portaRele = 4; // porta de controle do relé conectada no D4 do Arduino
 int valorLimiteUmidade = 500; // valor da tensão de comparação do sensor / valor máximo = 1024
 int valorLimiteChuva = 500; // valor da tensão de comparação do sensor máximo = 1024
 bool chuva; // condição de chuva
 bool soloUmido; // condição de solo úmido
 
+const float solo_max_1 = 0.0;
+const float solo_min_1 = 4.1;
+const float solo_max_2 = 3.3;
+const float solo_min_2 = 0.0;
+
 void setup() {
   pinMode(sensorUmidadeSolo, INPUT); // Sensor de umidade do solo - porta A0 é entrada
+  pinMode(sensorUmidadeSolo2, INPUT);
   
   // pinMode(sensorChuva, INPUT); // Sensor de chuva - porta A1 é entrada
   // pinMode(portaRele, OUTPUT); // Porta de controle do Relé - D4 é saída
@@ -122,16 +129,33 @@ void loop()
 
   delay(2000); // atraso de 5 segundos
 
-  // SensorDeChuva (); // faz medição do sensor de chuva
-  SensorDeUmidade (); // faz medição do sensor de umidade do solo
-  SensorDeTemperatura();
+  // Sensor umidade 1
+  int valorSensorUmidadeSolo = analogRead(sensorUmidadeSolo); // leitura do Sensor de umidade do solo
+  float umidade1 = (float(analogRead(valorSensorUmidadeSolo))/1023.0)*4.1;
+  float valor_umidade1 = map(umidade1, solo_min_1, solo_max_1, 100, 0);
   
-  // if (chuva == 0 && soloUmido == 0 && i == 1) 
-    // Serial.println("LIGA A BOMBA DE AGUA");// ControleDoRele(); // aciona a bomba dágua a cada 6 horas se tempo e solo estiverem secos
+  // Sensor umidade 1
+  int valorSensorUmidadeSolo2 = analogRead(sensorUmidadeSolo2); // leitura do Sensor de umidade do solo
+  float umidade2 = (float(analogRead(valorSensorUmidadeSolo2))/1023.0)*3.3;
+  float valor_umidade2 = map(umidade2, solo_min_2, solo_max_2, 100, 0);
   
-  // Serial.print(i*5); // imprime tempo em segundos
-  // Serial.println(" segundos"); 
-  // Serial.println(); // imprime mensagem e uma linha
-    
+  // Sensor temperatura
+  sensors_event_t event; // inicializa o evento da Temperatura
+  dht.temperature().getEvent(&event); // faz a leitura da Temperatura
+
+  Serial.print("{'umidade_solo': ");
+  Serial.print(umidade1); // valor do sensor de umidade do solo
+  Serial.print(", 'per_solo': ");
+  Serial.print(valor_umidade1); // valor do sensor de umidade do solo
+
+  Serial.print(", 'umidade_solo2': ");
+  Serial.print(umidade2); // valor do sensor de umidade do solo
+  Serial.print(", 'per_solo2': ");
+  Serial.print(valor_umidade2); // valor do sensor de umidade do solo
+
+
+  Serial.print(", 'temperatura ambiente': ");
+  Serial.print(event.temperature); // valor do sensor de umidade do solo
+  Serial.println("}");    
 
 }
